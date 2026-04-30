@@ -35,115 +35,46 @@
     </div>
 
     <script>
-        // CONFIGURAÇÕES DO SUPABASE (Substitua se necessário)
-        const SB_URL = "SUA_URL_AQUI";
-        const SB_KEY = "SUA_KEY_AQUI";
-        const _supabase = supabase.createClient(SB_URL, SB_KEY);
+        // Substitua tudo entre as tags <script> por este bloco:
+const SB_URL = "SUA_URL_AQUI";
+const SB_KEY = "SUA_KEY_AQUI";
+const _supabase = supabase.createClient(SB_URL, SB_KEY);
 
-        const html5QrCode = new html5QrCode("reader");
-        const card = document.getElementById('result-card');
+const html5QrCode = new Html5Qrcode("reader");
+const card = document.getElementById('result-card');
 
-        function onScanSuccess(decodedText) {
-            html5QrCode.pause();
-            processTicket(decodedText);
+// Função para iniciar a câmera com permissão explícita
+async function startScanner() {
+    try {
+        const devices = await Html5Qrcode.getCameras();
+        if (devices && devices.length > 0) {
+            // Tenta achar a câmera traseira, se não, pega a primeira disponível
+            const backCamera = devices.find(device => device.label.toLowerCase().includes('back')) || devices[0];
+            
+            await html5QrCode.start(
+                backCamera.id,
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                onScanSuccess
+            );
+        } else {
+            alert("Nenhuma câmera encontrada. Verifique as permissões do Safari.");
         }
+    } catch (err) {
+        console.error("Erro ao iniciar:", err);
+        alert("Clique no 'AA' ou no cadeado lá em cima e permita o acesso à câmera.");
+    }
+}
 
-        async function processTicket(data) {
-            const parts = data.split('_');
-            if (parts[0] !== 'VALIDAR') {
-                showError("QR CODE INVÁLIDO");
-                return;
-            }
+function onScanSuccess(decodedText) {
+    html5QrCode.pause();
+    processTicket(decodedText);
+}
 
-            const id = parts[1];
-            const token = parts[2];
+// RESTANTE DAS FUNÇÕES (processTicket, confirmarEntrega, etc...) 
+// MANTENHA AS QUE VOCÊ JÁ TEM ABAIXO DESTA LINHA
 
-            card.style.display = 'block';
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('content-area').style.display = 'none';
-
-            try {
-                const { data: venda, error } = await _supabase
-                    .from('vendas')
-                    .select('*')
-                    .eq('id', id)
-                    .eq('token', token)
-                    .single();
-
-                if (error || !venda) throw new Error("TICKET NÃO ENCONTRADO");
-
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('content-area').style.display = 'block';
-                
-                const statusTag = document.getElementById('status-tag');
-                const itemH1 = document.getElementById('ticket-item');
-                const infoP = document.getElementById('ticket-info');
-                const buttons = document.getElementById('action-buttons');
-
-                itemH1.innerText = venda.itens;
-                infoP.innerText = `Ticket #${venda.token} | Valor: R$ ${venda.valor}`;
-
-                if (venda.status === 'PAGO') {
-                    statusTag.innerText = "PRONTO PARA ENTREGA";
-                    statusTag.style.background = "#d4edda";
-                    statusTag.style.color = "#155724";
-                    buttons.innerHTML = `<button class="btn-confirm" onclick="confirmarEntrega(${id})">CONFIRMAR ENTREGA</button>`;
-                } else if (venda.status === 'ENTREGUE') {
-                    statusTag.innerText = "JÁ FOI ENTREGUE";
-                    statusTag.style.background = "#fff3cd";
-                    statusTag.style.color = "#856404";
-                    buttons.innerHTML = `<button class="btn-retry" onclick="resetScanner()">VOLTAR AO SCANNER</button>`;
-                } else {
-                    statusTag.innerText = "AGUARDANDO PAGAMENTO";
-                    statusTag.style.background = "#f8d7da";
-                    statusTag.style.color = "#721c24";
-                    buttons.innerHTML = `<button class="btn-retry" onclick="resetScanner()">TENTAR NOVAMENTE</button>`;
-                }
-
-            } catch (err) {
-                showError(err.message);
-            }
-        }
-
-        async function confirmarEntrega(id) {
-            const { error } = await _supabase
-                .from('vendas')
-                .update({ status: 'ENTREGUE' })
-                .eq('id', id);
-
-            if (!error) {
-                alert("✅ ENTREGA CONFIRMADA COM SUCESSO!");
-                resetScanner();
-            }
-        }
-
-        function showError(msg) {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('content-area').style.display = 'block';
-            document.getElementById('status-tag').innerText = "ERRO";
-            document.getElementById('status-tag').style.background = "#e63946";
-            document.getElementById('ticket-item').innerText = msg;
-            document.getElementById('action-buttons').innerHTML = `<button class="btn-retry" onclick="resetScanner()">TENTAR NOVAMENTE</button>`;
-        }
-
-        function resetScanner() {
-            card.style.display = 'none';
-            html5QrCode.resume();
-        }
-
-        Html5Qrcode.getCameras().then(devices => {
-  if (devices && devices.length) {
-    // Escolhe a última câmera da lista (geralmente a traseira principal)
-    const cameraId = devices[devices.length - 1].id; 
-    html5QrCode.start(
-      cameraId, 
-      { fps: 10, qrbox: { width: 250, height: 250 } },
-      onScanSuccess
-    ).catch(err => alert("Erro ao iniciar câmera: " + err));
-  } else {
-    alert("Nenhuma câmera encontrada.");
-  }
-}).catch(err => alert("Erro ao buscar câmeras: " + err));
+// Inicia automaticamente
+startScanner();
     </script>
 </body>
 </html>
