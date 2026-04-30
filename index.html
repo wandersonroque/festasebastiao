@@ -100,6 +100,7 @@
             box-shadow: 0 12px 40px rgba(234, 29, 44, 0.4); cursor: pointer;
         }
 
+        /* BOTÃO FLUTUANTE AMARELO */
         #tickets-float {
             position: fixed; bottom: 95px; right: 15px;
             background: #f1c40f; color: #000; padding: 12px 20px;
@@ -134,6 +135,7 @@
             background: #fffcf0; border: 2px dashed #f1c40f; border-radius: 20px;
             padding: 20px; margin: 10px auto; width: 280px; display: inline-block;
             vertical-align: top; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            white-space: normal;
         }
 
         .tickets-container { overflow-x: auto; white-space: nowrap; padding: 10px; scrollbar-width: none; }
@@ -170,7 +172,7 @@
         <div id="product-list"></div>
     </div>
 
-    <!-- BOTÃO MEUS TICKETS FLUTUANTE -->
+    <!-- BOTÃO MEUS TICKETS -->
     <div id="tickets-float" onclick="recuperarMeusPedidos()">
         🎫 MEUS TICKETS
     </div>
@@ -321,13 +323,14 @@ async function processOrder() {
         localStorage.setItem('arraiá_ultima_compra', compraID);
         document.getElementById('tickets-float').style.display = 'block';
 
-        mostrarTelaPagamento(totalValue);
-        iniciarVigilancia(data[0].id, data); 
-        
-        // Limpa o carrinho local após sucesso
+        // LIMPA O CARRINHO ANTES DE MOSTRAR A TELA
+        const totalPago = totalValue;
         cart = [];
         totalValue = 0;
         updateUI();
+
+        mostrarTelaPagamento(totalPago);
+        iniciarVigilancia(data[0].id, data); 
 
     } catch (e) {
         alert("Erro ao salvar: " + e.message);
@@ -346,7 +349,7 @@ function mostrarTelaPagamento(valor) {
                 <p style="font-size:0.8rem; color:#666; margin:0;">VALOR TOTAL DO PIX</p>
                 <h1 style="margin:5px 0; color:var(--success);">R$ ${valor.toFixed(2).replace('.', ',')}</h1>
             </div>
-            <p style="font-size:0.85rem; color:var(--text-sub);">Pague na barraca central. O sistema liberará seus tickets automaticamente após a confirmação.</p>
+            <p style="font-size:0.85rem; color:var(--text-sub);">O sistema liberará seus tickets automaticamente após a confirmação.</p>
         </div>
     `;
 }
@@ -395,7 +398,6 @@ function mostrarTicketsSucesso(itensVendidos) {
     });
 }
 
-// PERSISTÊNCIA: RECUPERAR PEDIDO
 function verificarCompraExistente() {
     const salvo = localStorage.getItem('arraiá_ultima_compra');
     if (salvo) {
@@ -423,7 +425,6 @@ async function recuperarMeusPedidos() {
             iniciarVigilancia(data[0].id, data);
         }
     } else {
-        alert("Nenhum pedido encontrado.");
         localStorage.removeItem('arraiá_ultima_compra');
         document.getElementById('tickets-float').style.display = 'none';
         closeCheckout();
@@ -431,7 +432,12 @@ async function recuperarMeusPedidos() {
 }
 
 function limparEComprarDeNovo() {
+    closeCheckout(); 
     localStorage.removeItem('arraiá_ultima_compra');
+    document.getElementById('tickets-float').style.display = 'none';
+    cart = [];
+    totalValue = 0;
+    updateUI();
     location.reload();
 }
 
