@@ -131,11 +131,19 @@
             html5QrCode.resume();
         }
 
-        html5QrCode.start(
-            { facingMode: "environment" },
-            { fps: 10, qrbox: { width: 250, height: 250 } },
-            onScanSuccess
-        );
+        Html5Qrcode.getCameras().then(devices => {
+  if (devices && devices.length) {
+    // Escolhe a última câmera da lista (geralmente a traseira principal)
+    const cameraId = devices[devices.length - 1].id; 
+    html5QrCode.start(
+      cameraId, 
+      { fps: 10, qrbox: { width: 250, height: 250 } },
+      onScanSuccess
+    ).catch(err => alert("Erro ao iniciar câmera: " + err));
+  } else {
+    alert("Nenhuma câmera encontrada.");
+  }
+}).catch(err => alert("Erro ao buscar câmeras: " + err));
     </script>
 </body>
 </html>
